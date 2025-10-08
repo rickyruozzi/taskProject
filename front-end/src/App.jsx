@@ -1,8 +1,52 @@
-import { useState } from 'react' //importa l'hook useState
+import { useState, useEffect } from 'react' //importa l'hook useState e useEffect
 import './App.css'  //importa il file css
 
-function VisualizzaForm() { //questa funzione servirà per stampare le task
-  return <div>Qui puoi visualizzare le tue task.</div>;
+function cardTask(task){
+  return(
+    <div className='card-wrapper'>
+    <div className="task-card" key={task.id}>
+      <h3>{task.title}</h3>
+      <p>{task.description}</p>
+      <p>{formatDateTime(task.date)}</p>
+      <p>ID: {task.id}</p>
+    </div>
+    </div>
+  );
+}
+
+function VisualizzaForm() {
+  const [tasks,setTasks]=useState([]); //stato delle task, inizialmente vuoto
+  const fetchTasks = async () => {
+    try{
+      const response = await fetch('http://127.0.0.1:8000/get_tasks/',{
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      }); //fetch per ottenere le task dal back-end
+      if(response.ok){
+        const data=await response.json(); //attende la risposta in formato json
+        setTasks(data); //aggiorna lo stato delle task con i dati ricevuti
+      }
+   }
+   catch{
+      alert('Errore di connessione al backend');
+      return;
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  return (
+    <div>
+      <h2>Le tue Task</h2>
+      {tasks.length > 0 ? (
+        tasks.map(task => cardTask(task)) //se task >0 mostra le varie task grazie alla funzione map cheitera su ogni task tramite la funzione cardTask
+      ) : (
+        <p>Nessuna task presente.</p>
+      )}
+    </div>
+  );
 }
 
 function AggiungiForm() { //funzione che aggiunge un form  per aggiungere una task
@@ -39,7 +83,7 @@ function AggiungiForm() { //funzione che aggiunge un form  per aggiungere una ta
       } else {
         alert('Errore nell\'aggiunta della task'); //notifica di operazione non riuscita
       }
-    } catch (error) { //se nel blocco si verificano errori legati al fetch stampa un errore
+    } catch { //se nel blocco si verificano errori legati al fetch stampa un errore
          alert('Errore di connessione al backend');
     }
   };
@@ -115,7 +159,7 @@ function ModificaRimuoviForm() {
       const response = await fetch('http://127.0.0.1:8000/remove_task/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, //passiamo i parametri come dati del form
-        body: new URLSearchParams({ task_id: taskId }),
+        body: new URLSearchParams({ task_id: taskId }), //crea una stringa di query codificata in URL con il parametro task_id
       });
       if (response.ok) {
         alert('Task rimossa con successo!');

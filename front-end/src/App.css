@@ -169,3 +169,16 @@
   color: var(--clr);
 }
 
+.task-card {
+  background: rgba(0, 0, 0, 0.259);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(12, 224, 16, 0.731);
+  padding: 1rem 2rem;
+  margin: 0.51rem;
+  width: 800px;
+  text-align: left;
+}
+.card-wrapper {
+  display: flex;
+  justify-content: center;
+}

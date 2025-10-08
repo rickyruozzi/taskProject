@@ -50,6 +50,7 @@ def remove_task(task_id: int = Form(...)): #stiamo passando task_id come paramet
 @app.get("/get_tasks/", response_model=List[Task])
 def get_tasks():
     tasks = list(collection.find()) #restituisce una lista con tutte le taskpresenti nel db
+    tasks=reversed(tasks) #inverte l'ordine delle task in modo che le più recenti vengano mostrate per prime
     return tasks    #restituisce questa lista
 
 @app.post("/update_task/", response_model=Task)
