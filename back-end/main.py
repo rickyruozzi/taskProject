@@ -2,8 +2,13 @@ from pymongo import MongoClient #client mongo per la connessione con il DB
 from fastapi import FastAPI, HTTPException, Form #modulo fastapi per implementare le funzioni del back-end
 from pydantic import BaseModel #modulo che permette di dichiarare un basemodel per le task
 from typing import List, Optional #permette di utilizzare sintassi tipizzate in python
-from datetime import datetime   #serve per importare il tipo di dato datetime
+from datetime import datetime, timedelta   #serve per importare il tipo di dato datetime
 from fastapi.middleware.cors import CORSMiddleware #serve per impostare la CORS policy
+import os
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 
 client = MongoClient("mongodb://localhost:27017/")  #connessione al client mongo
 db=client["taskProject"]    #scelta del DB
@@ -25,6 +30,37 @@ class Task(BaseModel):  #definizione del modello di base per le Task
     title: str
     description: str
     date: datetime
+
+SCOPES = ['https://www.googleapis.com/auth/calendar.events']
+
+def get_calendar_service():
+    creds = None
+    token_file = os.path.join(os.path.dirname(__file__), 'token.json')
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+            except Exception:
+                # Refresh failed, get new credentials
+                creds_file = os.path.join(os.path.dirname(__file__), 'credentials.json')
+                flow = InstalledAppFlow.from_client_secrets_file(creds_file, SCOPES)
+                try:
+                    creds = flow.run_local_server(port=8080)
+                except OSError as e:
+                    raise HTTPException(status_code=500, detail="Port 8080 is in use. Please close any process using port 8080 and try again.")
+        else:
+            creds_file = os.path.join(os.path.dirname(__file__), 'credentials.json')
+            flow = InstalledAppFlow.from_client_secrets_file(creds_file, SCOPES)
+            try:
+                creds = flow.run_local_server(port=8080)
+            except OSError as e:
+                raise HTTPException(status_code=500, detail="Port 8080 is in use. Please close any process using port 8080 and try again.")
+        with open(token_file, 'w') as token:
+            token.write(creds.to_json())
+    service = build('calendar', 'v3', credentials=creds)
+    return service
     
     
 @app.post("/insert_task/", response_model=Task) #endpoint usato per aggiungere task
@@ -58,9 +94,30 @@ def update_task(task: Task):
     result=collection.update_one({"id":task.id}, {"$set": task.dict()})
     #update_one() prende come primo argomento un filtro per trovare il documento da aggiornare, e come secondo argomento un dizionario con i campi da aggiornare
     if result.matched_count==0:
-        raise HTTPException(status_code=404, detail='Task not found') 
+        raise HTTPException(status_code=404, detail='Task not found')
     #update_one() restituisce il numero di documenti aggiornati, se tale numero è 0 non ci sono stati aggiornamenti
     return task #restituice la task aggiornata
+
+@app.post("/sync_to_calendar/", response_model=dict)
+def sync_to_calendar():
+    tasks = list(collection.find())
+    service = get_calendar_service()
+    for task in tasks:
+        date_obj = datetime.fromisoformat(task['date']) if isinstance(task['date'], str) else task['date']
+        event = {
+            'summary': task['title'],
+            'description': task['description'],
+            'start': {
+                'dateTime': date_obj.isoformat(),
+                'timeZone': 'Europe/Rome',  # Adjust timezone as needed
+            },
+            'end': {
+                'dateTime': (date_obj + timedelta(hours=1)).isoformat(),  # Assume 1 hour duration
+                'timeZone': 'Europe/Rome',
+            },
+        }
+        service.events().insert(calendarId='primary', body=event).execute()
+    return {"message": "Tasks synced to Google Calendar."}
 
 if __name__ == "__main__":
     import uvicorn

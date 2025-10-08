@@ -3,8 +3,8 @@ import './App.css'  //importa il file css
 
 function cardTask(task){
   return(
-    <div className='card-wrapper'>
-    <div className="task-card" key={task.id}>
+    <div className='card-wrapper' key={task.id}>
+    <div className="task-card">
       <h3>{task.title}</h3>
       <p>{task.description}</p>
       <p>{formatDateTime(task.date)}</p>
@@ -37,6 +37,22 @@ function VisualizzaForm() {
     fetchTasks();
   }, []);
 
+  const syncToCalendar = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/sync_to_calendar/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        alert('Task sincronizzate con Google Calendar!');
+      } else {
+        alert('Errore nella sincronizzazione.');
+      }
+    } catch {
+      alert('Errore di connessione al backend');
+    }
+  };
+
   return (
     <div>
       <h2>Le tue Task</h2>
@@ -45,6 +61,7 @@ function VisualizzaForm() {
       ) : (
         <p>Nessuna task presente.</p>
       )}
+      <button onClick={syncToCalendar} className='sync_button'>Sincronizza con Google Calendar</button>
     </div>
   );
 }
@@ -145,7 +162,7 @@ function ModificaRimuoviForm() {
       } else {
         alert("Errore nella modifica della task");
       }
-    } catch (error) {
+    } catch {
       alert("Errore di connessione al backend");
     }
   };
@@ -167,7 +184,7 @@ function ModificaRimuoviForm() {
       } else {
         alert('Errore nella rimozione della task');
       }
-    } catch (error) {
+    } catch {
       alert('Errore di connessione al backend');
     }
   };
