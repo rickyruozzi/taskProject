@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react' //importa l'hook useState e useEffect
 import './App.css'  //importa il file css
 
@@ -14,10 +15,24 @@ function cardTask(task){
   );
 }
 
+function FilterTasks(tasks,setTasks, query) {
+  const filtered = tasks.filter(task =>
+    task.title.toLowerCase().includes(query.toLowerCase()) ||
+    task.description.toLowerCase().includes(query.toLowerCase())
+  );
+  if (filtered.length > 0) {
+    setTasks(filtered);
+  }
+  else {
+    alert('Nessuna task trovata.');
+  }
+ }
+
 function VisualizzaForm() {
   const [tasks,setTasks]=useState([]); //stato delle task, inizialmente vuoto
   const [originalTasks, setOriginalTasks] = useState([]); //stato delle task originali
   const [isSortedByDeadline, setIsSortedByDeadline] = useState(false); //stato per sapere se è ordinato per scadenza
+  const [searchQuery, setSearchQuery] = useState(''); //stato per la query di ricerca
   const fetchTasks = async () => {
     try{
       const response = await fetch('http://127.0.0.1:8000/get_tasks/',{
@@ -76,6 +91,10 @@ function VisualizzaForm() {
       ) : (
         <p>Nessuna task presente.</p>
       )}
+      <div className="search-container">
+        <input type="text" className="search-input" placeholder="Cerca task..." onChange={(e)=>setSearchQuery(e.target.value)} />
+        <button className="search-button" onClick={()=>FilterTasks(tasks,setTasks,  searchQuery)}>Cerca</button>
+      </div>
       <button onClick={syncToCalendar} className='sync_button'>Sincronizza con Google Calendar</button>
     </div>
   );
