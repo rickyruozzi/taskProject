@@ -16,6 +16,8 @@ function cardTask(task){
 
 function VisualizzaForm() {
   const [tasks,setTasks]=useState([]); //stato delle task, inizialmente vuoto
+  const [originalTasks, setOriginalTasks] = useState([]); //stato delle task originali
+  const [isSortedByDeadline, setIsSortedByDeadline] = useState(false); //stato per sapere se è ordinato per scadenza
   const fetchTasks = async () => {
     try{
       const response = await fetch('http://127.0.0.1:8000/get_tasks/',{
@@ -37,6 +39,11 @@ function VisualizzaForm() {
     fetchTasks();
   }, []);
 
+  const sortByDeadline = () => {
+    const sorted = [...tasks].sort((a, b) => new Date(b.date) - new Date(a.date)); //setta le task in ordine di scadenza
+    setTasks(sorted);
+  };
+
   const syncToCalendar = async () => {
     try {
       const response = await fetch('http://127.0.0.1:8000/sync_to_calendar/', {
@@ -56,6 +63,7 @@ function VisualizzaForm() {
   return (
     <div>
       <h2>Le tue Task</h2>
+      <button onClick={sortByDeadline} className='Ordina'>Ordina per scadenza</button>
       {tasks.length > 0 ? (
         tasks.map(task => cardTask(task)) //se task >0 mostra le varie task grazie alla funzione map cheitera su ogni task tramite la funzione cardTask
       ) : (

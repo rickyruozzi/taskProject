@@ -196,3 +196,17 @@
   background-color: var(--clr);
   color: var(--bg-dark);
 }
+
+.Ordina{
+  margin: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #1eab20ff;
+   color: white;
+  border: none;
+  border-radius: 0.5rem 
+}
+
+.Ordina:hover{
+  background-color: var(--clr);
+  color: var(--bg-dark);
+}
