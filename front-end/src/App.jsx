@@ -27,6 +27,7 @@ function VisualizzaForm() {
       if(response.ok){
         const data=await response.json(); //attende la risposta in formato json
         setTasks(data); //aggiorna lo stato delle task con i dati ricevuti
+        setOriginalTasks(data); //salva le task originali
       }
    }
    catch{
@@ -40,8 +41,14 @@ function VisualizzaForm() {
   }, []);
 
   const sortByDeadline = () => {
-    const sorted = [...tasks].sort((a, b) => new Date(b.date) - new Date(a.date)); //setta le task in ordine di scadenza
-    setTasks(sorted);
+    if (isSortedByDeadline) {
+      setTasks(originalTasks);
+      setIsSortedByDeadline(false);
+    } else {
+      const sorted = [...originalTasks].sort((a, b) => new Date(b.date) - new Date(a.date));
+      setTasks(sorted);
+      setIsSortedByDeadline(true);
+    }
   };
 
   const syncToCalendar = async () => {
